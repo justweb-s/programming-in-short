@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Rotating Torus Knot (Three.js)</title>
+  <style>
+    /* Make canvas fill screen with no margins */
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #111; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+  <script>
+    // Scene, camera, renderer setup
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x111111);
+
+    const camera = new THREE.PerspectiveCamera(
+      45,                     // field of view
+      window.innerWidth / window.innerHeight,
+      0.1,                    // near clipping
+      100                     // far clipping
+    );
+    camera.position.set(0, 0, 5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Responsive resizing
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Geometry: TorusKnot
+    const geometry = new THREE.TorusKnotGeometry(1, 0.3, 128, 32);
+    // Material: phong for shiny effect
+    const material = new THREE.MeshPhongMaterial({
+      color: 0xff6600,
+      shininess: 100,
+      specular: 0x222222,
+      flatShading: false
+    });
+    const torusKnot = new THREE.Mesh(geometry, material);
+    scene.add(torusKnot);
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0x333333);
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0xffffff, 1);
+    pointLight.position.set(5, 5, 5);
+    scene.add(pointLight);
+
+    // Animation loop
+    let clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const t = clock.getElapsedTime();
+
+      // Rotate torus knot continually
+      torusKnot.rotation.x = t * 0.5;
+      torusKnot.rotation.y = t * 0.3;
+
+      // Move camera in a circular orbit around the object
+      camera.position.x = Math.cos(t * 0.2) * 5;
+      camera.position.z = Math.sin(t * 0.2) * 5;
+      camera.lookAt(scene.position);
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
