@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arte Pura</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #000;
+    }
+    #artCanvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="artCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById('artCanvas');
+    const ctx = canvas.getContext('2d');
+    let w, h;
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let mouseX = w / 2, mouseY = h / 2;
+    const mouseParticles = [];
+    window.addEventListener('mousemove', e => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      for (let i = 0; i < 5; i++) {
+        mouseParticles.push(new MouseParticle(mouseX, mouseY));
+      }
+    });
+
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * w;
+        this.y = Math.random() * h;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.size = Math.random() * 2 + 1;
+        this.life = Math.random() * 100 + 50;
+        this.remaining = this.life;
+        this.hue = Math.random() * 360;
+      }
+      update() {
+        this.remaining--;
+        if (this.remaining <= 0) this.reset();
+        // attrazione verso il mouse
+        this.vx += (mouseX - this.x) * 0.0005;
+        this.vy += (mouseY - this.y) * 0.0005;
+        // limitazione velocità
+        const speed = Math.hypot(this.vx, this.vy);
+        const maxSpeed = 3;
+        if (speed > maxSpeed) {
+          this.vx = (this.vx / speed) * maxSpeed;
+          this.vy = (this.vy / speed) * maxSpeed;
+        }
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > w || this.y < 0 || this.y > h) this.reset();
+      }
+      draw() {
+        const alpha = this.remaining / this.life;
+        ctx.fillStyle = 'hsla('
+          + this.hue + ', '
+          + '100%, '
+          + '50%, '
+          + alpha
+          + ')';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    }
+
+    class MouseParticle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.speed = Math.random() * 2 + 1;
+        this.angle = Math.random() * 2 * Math.PI;
+        this.vx = Math.cos(this.angle) * this.speed;
+        this.vy = Math.sin(this.angle) * this.speed;
+        this.size = Math.random() * 3 + 1;
+        this.life = Math.random() * 30 + 20;
+        this.remaining = this.life;
+        this.hue = Math.random() * 360;
+      }
+      update() {
+        this.remaining--;
+        this.x += this.vx;
+        this.y += this.vy;
+      }
+      draw() {
+        const alpha = this.remaining / this.life;
+        ctx.fillStyle = 'hsla('
+          + this.hue + ', '
+          + '100%, '
+          + '50%, '
+          + alpha
+          + ')';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    }
+
+    const particles = [];
+    for (let i = 0; i < 200; i++) {
+      particles.push(new Particle());
+    }
+
+    function animate() {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.globalCompositeOperation = 'lighter';
+
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+
+      for (let i = mouseParticles.length - 1; i >= 0; i--) {
+        const mp = mouseParticles[i];
+        mp.update();
+        mp.draw();
+        if (mp.remaining <= 0) mouseParticles.splice(i, 1);
+      }
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>
