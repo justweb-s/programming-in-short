@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impressive 3D Animation</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
+            font-family: Arial, sans-serif;
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .title {
+            position: absolute;
+            top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .scene {
+            perspective: 1000px;
+            width: 300px;
+            height: 300px;
+            position: relative;
+        }
+
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-20deg) rotateY(45deg);
+            transition: transform 0.5s;
+        }
+
+        .cube div {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5) inset;
+        }
+
+        .front {
+            background: linear-gradient(45deg, #ff3366, #ff6633);
+            transform: translateZ(150px);
+        }
+
+        .back {
+            background: linear-gradient(45deg, #33ccff, #3366ff);
+            transform: rotateY(180deg) translateZ(150px);
+        }
+
+        .right {
+            background: linear-gradient(45deg, #33ff99, #33cc33);
+            transform: rotateY(90deg) translateZ(150px);
+        }
+
+        .left {
+            background: linear-gradient(45deg, #ffcc33, #ff9933);
+            transform: rotateY(-90deg) translateZ(150px);
+        }
+
+        .top {
+            background: linear-gradient(45deg, #cc33ff, #9933ff);
+            transform: rotateX(90deg) translateZ(150px);
+        }
+
+        .bottom {
+            background: linear-gradient(45deg, #ff33cc, #ff3399);
+            transform: rotateX(-90deg) translateZ(150px);
+        }
+
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive design */
+        @media (max-width: 600px) {
+            .scene {
+                width: 200px;
+                height: 200px;
+            }
+            
+            .cube div {
+                width: 200px;
+                height: 200px;
+            }
+            
+            .front, .back {
+                transform: translateZ(100px);
+            }
+            
+            .right, .left {
+                transform-origin: center;
+                width: 200px;
+            }
+            
+            .right {
+                transform: rotateY(90deg) translateZ(100px);
+            }
+            
+            .left {
+                transform: rotateY(-90deg) translateZ(100px);
+            }
+            
+            .top, .bottom {
+                transform-origin: center;
+                height: 200px;
+            }
+            
+            .top {
+                transform: rotateX(90deg) translateZ(100px);
+            }
+            
+            .bottom {
+                transform: rotateX(-90deg) translateZ(100px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">Interactive 3D Cube</div>
+    
+    <div class="scene">
+        <div class="cube" id="cube">
+            <div class="front">Front</div>
+            <div class="back">Back</div>
+            <div class="right">Right</div>
+            <div class="left">Left</div>
+            <div class="top">Top</div>
+            <div class="bottom">Bottom</div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button id="autoRotate">Auto Rotate</button>
+        <button id="resetCube">Reset</button>
+        <button id="randomColor">Change Colors</button>
+    </div>
+    
+    <div class="particles" id="particles"></div>
+
+    <script>
+        // Initial configuration
+        let autoRotating = false;
+        let autoRotateInterval;
+        let rotX = -20;
+        let rotY = 45;
+        let rotZ = 0;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        let isDragging = false;
+        const cube = document.getElementById('cube');
+        const autoRotateBtn = document.getElementById('autoRotate');
+        const resetBtn = document.getElementById('resetCube');
+        const randomColorBtn = document.getElementById('randomColor');
+        const particlesContainer = document.getElementById('particles');
+        
+        // Create particles
+        function createParticles(count) {
+            particlesContainer.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random size
+                const size = Math.random() * 6 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Random X position
+                const posX = Math.random() * window.innerWidth;
+                particle.style.left = `${posX}px`;
+                
+                // Random animation duration
+                const duration = Math.random() * 10 + 10;
+                particle.style.animationDuration = `${duration}s`;
+                
+                // Random delay
+                const delay = Math.random() * 5;
+                particle.style.animationDelay = `${delay}s`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
+        // Update cube display
+        function updateCube() {
+            cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`;
+        }
+        
+        // Start auto rotation
+        function startAutoRotate() {
+            if (autoRotating) return;
+            
+            autoRotating = true;
+            autoRotateBtn.textContent = 'Stop Rotation';
+            
+            autoRotateInterval = setInterval(() => {
+                rotY += 0.5;
+                rotX += 0.2;
+                updateCube();
+            }, 30);
+        }
+        
+        // Stop auto rotation
+        function stopAutoRotate() {
+            if (!autoRotating) return;
+            
+            autoRotating = false;
+            autoRotateBtn.textContent = 'Auto Rotate';
+            clearInterval(autoRotateInterval);
+        }
+        
+        // Reset cube to initial position
+        function resetCube() {
+            stopAutoRotate();
+            rotX = -20;
+            rotY = 45;
+            rotZ = 0;
+            updateCube();
+        }
+        
+        // Generate random color in HSL format
+        function getRandomColor() {
+            const h = Math.floor(Math.random() * 360);
+            return `hsl(${h}, 80%, 60%)`;
+        }
+        
+        // Change cube colors randomly
+        function changeColors() {
+            const faces = document.querySelectorAll('.cube div');
+            
+            faces.forEach(face => {
+                const color1 = getRandomColor();
+                const color2 = getRandomColor();
+                face.style.background = `linear-gradient(45deg, ${color1}, ${color2})`;
+            });
+            
+            // Change background color as well
+            const bgColor1 = getRandomColor();
+            const bgColor2 = getRandomColor();
+            const bgColor3 = getRandomColor();
+            document.body.style.background = `linear-gradient(45deg, ${bgColor1}, ${bgColor2}, ${bgColor3})`;
+        }
+        
+        // Handle mouse drag to rotate the cube
+        function handleMouseDown(e) {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            stopAutoRotate();
+        }
+        
+        function handleMouseMove(e) {
+            if (!isDragging) return;
+            
+            const deltaX = e.clientX - lastMouseX;
+            const deltaY = e.clientY - lastMouseY;
+            
+            rotY += deltaX * 0.5;
+            rotX += deltaY * 0.5;
+            
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            
+            updateCube();
+        }
+        
+        function handleMouseUp() {
+            isDragging = false;
+        }
+        
+        // Handle touch for mobile devices
+        function handleTouchStart(e) {
+            isDragging = true;
+            lastMouseX = e.touches[0].clientX;
+            lastMouseY = e.touches[0].clientY;
+            stopAutoRotate();
+        }
+        
+        function handleTouchMove(e) {
+            if (!isDragging) return;
+            
+            const deltaX = e.touches[0].clientX - lastMouseX;
+            const deltaY = e.touches[0].clientY - lastMouseY;
+            
+            rotY += deltaX * 0.5;
+            rotX += deltaY * 0.5;
+            
+            lastMouseX = e.touches[0].clientX;
+            lastMouseY = e.touches[0].clientY;
+            
+            updateCube();
+            
+            // Prevent page scrolling during drag
+            e.preventDefault();
+        }
+        
+        // Initialization
+        function init() {
+            // Mouse events
+            cube.addEventListener('mousedown', handleMouseDown);
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            
+            // Touch events
+            cube.addEventListener('touchstart', handleTouchStart);
+            document.addEventListener('touchmove', handleTouchMove, { passive: false });
+            document.addEventListener('touchend', handleMouseUp);
+            
+            // Control buttons
+            autoRotateBtn.addEventListener('click', () => {
+                autoRotating ? stopAutoRotate() : startAutoRotate();
+            });
+            
+            resetBtn.addEventListener('click', resetCube);
+            randomColorBtn.addEventListener('click', changeColors);
+            
+            // Create background particles
+            createParticles(50);
+            
+            // Start with auto rotation
+            startAutoRotate();
+        }
+        
+        // Start the application
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
